@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:flutter_polyline_points/flutter_polyline_points.dart';
+import 'package:provider/provider.dart';
+import 'package:tracking_utils/provider/polylines.dart';
 
 class MapView extends StatefulWidget {
   final String API_KEY;
@@ -29,59 +31,6 @@ class _MapViewState extends State<MapView> {
   late GoogleMapController mapController;
   late Position _currentPosition;
   Set markers = {};
-  Set finalpoly = {};
-// Object for PolylinePoints
-  late PolylinePoints polylinePoints;
-
-// List of coordinates to join
-  List<LatLng> polylineCoordinates = [];
-
-// Map storing polylines created by connecting two points
-  Map<PolylineId, Polyline> polylines = {};
-
-  _createPolylines(
-    double startLatitude,
-    double startLongitude,
-    double destinationLatitude,
-    double destinationLongitude,
-  ) async {
-    // Initializing PolylinePoints
-    polylinePoints = PolylinePoints();
-
-    // Generating the list of coordinates to be used for
-    // drawing the polylines
-    PolylineResult result = await polylinePoints.getRouteBetweenCoordinates(
-      widget.API_KEY, // Google Maps API Key
-      PointLatLng(startLatitude, startLongitude),
-      PointLatLng(destinationLatitude, destinationLongitude),
-      travelMode: TravelMode.driving,
-    );
-
-    // Adding the coordinates to the list
-    if (result.points.isNotEmpty) {
-      result.points.forEach((PointLatLng point) {
-        polylineCoordinates.add(
-          LatLng(point.latitude, point.longitude),
-        );
-      });
-    }
-
-    // Defining an ID
-    PolylineId id = PolylineId('poly');
-
-    // Initializing Polyline
-    Polyline polyline = Polyline(
-      polylineId: id,
-      color: Colors.red,
-      points: polylineCoordinates,
-      width: 3,
-    );
-
-    // Adding the polyline to the map
-    setState(() {
-      polylines[id] = polyline;
-    });
-  }
 
   draw_markers() {
     String startCoordinatesString = '(22.3, 34.5)';
@@ -134,7 +83,9 @@ class _MapViewState extends State<MapView> {
       ),
     );
 
-    _createPolylines(startLat, startLon, destLat, destLon);
+    Provider.of<PolylinesProvider>(
+      context,listen: false,
+    ).createPolylines(startLat, startLon, destLat, destLon);
   }
 
   _getCurrentLocation() async {
@@ -165,33 +116,38 @@ class _MapViewState extends State<MapView> {
   Widget build(BuildContext context) {
     return MapBody(
       markers: markers,
-      polylines: polylines,
+      initMapController: initMapController,
       initialLocation: _initialLocation,
       getCurrentLocation: _getCurrentLocation,
       draw_markers: draw_markers,
     );
   }
+
+  void initMapController(controller) {
+    mapController = controller;
+  }
 }
 
 class MapBody extends StatelessWidget {
   final Set<dynamic> markers;
-  final Map<PolylineId, Polyline> polylines;
   final CameraPosition initialLocation;
-  late GoogleMapController mapController;
+  final Function initMapController;
   final Function getCurrentLocation;
   final Function draw_markers;
 
   MapBody({
     required this.markers,
-    required this.polylines,
     required this.initialLocation,
     required this.getCurrentLocation,
     required this.draw_markers,
+    required this.initMapController,
   });
 
   @override
   Widget build(BuildContext context) {
     // Determining the screen width & height
+    final polylineProvider = Provider.of<PolylinesProvider>(context);
+
     var height = MediaQuery.of(context).size.height;
     var width = MediaQuery.of(context).size.width;
     return Container(
@@ -202,7 +158,7 @@ class MapBody extends StatelessWidget {
           children: <Widget>[
             GoogleMap(
               markers: Set<Marker>.from(markers),
-              polylines: Set<Polyline>.of(polylines.values),
+              polylines: Set<Polyline>.of(polylineProvider.polylines.values),
               initialCameraPosition: initialLocation,
               myLocationEnabled: true,
               myLocationButtonEnabled: false,
@@ -210,7 +166,8 @@ class MapBody extends StatelessWidget {
               zoomGesturesEnabled: true,
               zoomControlsEnabled: false,
               onMapCreated: (GoogleMapController controller) {
-                mapController = controller;
+                // mapController = controller;
+                initMapController(controller);
                 getCurrentLocation();
               },
             ),
