@@ -19,8 +19,12 @@ class MapView extends StatefulWidget {
 }
 
 class _MapViewState extends State<MapView> {
-  late CameraPosition _initialLocation = CameraPosition(
-      target: LatLng(widget.initialLocation[0], widget.initialLocation[1]));
+  late final CameraPosition _initialLocation = CameraPosition(
+    target: LatLng(
+      widget.initialLocation[0],
+      widget.initialLocation[1],
+    ),
+  );
 
   late GoogleMapController mapController;
   late Position _currentPosition;
@@ -53,11 +57,12 @@ class _MapViewState extends State<MapView> {
       travelMode: TravelMode.driving,
     );
 
-    print(result.points);
     // Adding the coordinates to the list
     if (result.points.isNotEmpty) {
       result.points.forEach((PointLatLng point) {
-        polylineCoordinates.add(LatLng(point.latitude, point.longitude));
+        polylineCoordinates.add(
+          LatLng(point.latitude, point.longitude),
+        );
       });
     }
 
@@ -138,8 +143,6 @@ class _MapViewState extends State<MapView> {
         // Store the position in the variable
         _currentPosition = position;
 
-        print('CURRENT POS: $_currentPosition');
-
         // For moving the camera to current location
         mapController.animateCamera(
           CameraUpdate.newCameraPosition(
@@ -156,16 +159,41 @@ class _MapViewState extends State<MapView> {
   @override
   void initState() {
     super.initState();
-    CameraPosition _initialLocation = CameraPosition(
-        target: LatLng(widget.initialLocation[0], widget.initialLocation[1]));
   }
+
+  @override
+  Widget build(BuildContext context) {
+    return MapBody(
+      markers: markers,
+      polylines: polylines,
+      initialLocation: _initialLocation,
+      getCurrentLocation: _getCurrentLocation,
+      draw_markers: draw_markers,
+    );
+  }
+}
+
+class MapBody extends StatelessWidget {
+  final Set<dynamic> markers;
+  final Map<PolylineId, Polyline> polylines;
+  final CameraPosition initialLocation;
+  late GoogleMapController mapController;
+  final Function getCurrentLocation;
+  final Function draw_markers;
+
+  MapBody({
+    required this.markers,
+    required this.polylines,
+    required this.initialLocation,
+    required this.getCurrentLocation,
+    required this.draw_markers,
+  });
 
   @override
   Widget build(BuildContext context) {
     // Determining the screen width & height
     var height = MediaQuery.of(context).size.height;
     var width = MediaQuery.of(context).size.width;
-
     return Container(
       height: height,
       width: width,
@@ -175,7 +203,7 @@ class _MapViewState extends State<MapView> {
             GoogleMap(
               markers: Set<Marker>.from(markers),
               polylines: Set<Polyline>.of(polylines.values),
-              initialCameraPosition: _initialLocation,
+              initialCameraPosition: initialLocation,
               myLocationEnabled: true,
               myLocationButtonEnabled: false,
               mapType: MapType.normal,
@@ -183,7 +211,7 @@ class _MapViewState extends State<MapView> {
               zoomControlsEnabled: false,
               onMapCreated: (GoogleMapController controller) {
                 mapController = controller;
-                _getCurrentLocation();
+                getCurrentLocation();
               },
             ),
             Align(
@@ -201,7 +229,7 @@ class _MapViewState extends State<MapView> {
                         child: Icon(Icons.my_location),
                       ),
                       onTap: () {
-                        _getCurrentLocation();
+                        getCurrentLocation();
                       },
                     ),
                   ),
