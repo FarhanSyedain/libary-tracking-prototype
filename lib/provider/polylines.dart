@@ -6,8 +6,10 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 class PolylinesProvider with ChangeNotifier {
   final Map<PolylineId, Polyline> _polylines = {};
   late PolylinePoints polylinePoints;
-
+  final String apiKey;
   List<LatLng> polylineCoordinates = [];
+
+  PolylinesProvider(this.apiKey);
 
   createPolylines(
     double startLatitude,
@@ -20,8 +22,7 @@ class PolylinesProvider with ChangeNotifier {
     // Generating the list of coordinates to be used for
     // drawing the polylines
     PolylineResult result = await polylinePoints.getRouteBetweenCoordinates(
-      // widget.API_KEY, // Google Maps API Key
-      'AIzaSyBR5d0ybBpR54pKQczU3YD0e_pprvxRKzY',
+      apiKey, // Google Maps API Key
       PointLatLng(startLatitude, startLongitude),
       PointLatLng(destinationLatitude, destinationLongitude),
       travelMode: TravelMode.driving,
