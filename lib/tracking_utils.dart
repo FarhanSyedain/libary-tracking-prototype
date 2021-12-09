@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:flutter_polyline_points/flutter_polyline_points.dart';
+import 'package:provider/provider.dart';
+import 'package:tracking_utils/provider/polylines.dart';
 
 class MapView extends StatefulWidget {
   final String API_KEY;
@@ -19,74 +21,18 @@ class MapView extends StatefulWidget {
 }
 
 class _MapViewState extends State<MapView> {
-  late CameraPosition _initialLocation = CameraPosition(
-      target: LatLng(widget.initialLocation[0], widget.initialLocation[1]));
+  late final CameraPosition _initialLocation = CameraPosition(
+    target: LatLng(
+      widget.initialLocation[0],
+      widget.initialLocation[1],
+    ),
+  );
 
   late GoogleMapController mapController;
   late Position _currentPosition;
   Set markers = {};
-  Set finalpoly = {};
-// Object for PolylinePoints
-  late PolylinePoints polylinePoints;
-
-// List of coordinates to join
-  List<LatLng> polylineCoordinates = [];
-
-// Map storing polylines created by connecting two points
-  Map<PolylineId, Polyline> polylines = {};
-
-  _createPolylines(
-    double startLatitude,
-    double startLongitude,
-    double destinationLatitude,
-    double destinationLongitude,
-  ) async {
-    // Initializing PolylinePoints
-    polylinePoints = PolylinePoints();
-
-    // Generating the list of coordinates to be used for
-    // drawing the polylines
-    PolylineResult result = await polylinePoints.getRouteBetweenCoordinates(
-      widget.API_KEY, // Google Maps API Key
-      PointLatLng(startLatitude, startLongitude),
-      PointLatLng(destinationLatitude, destinationLongitude),
-      travelMode: TravelMode.driving,
-    );
-
-    print(result.points);
-    // Adding the coordinates to the list
-    if (result.points.isNotEmpty) {
-      result.points.forEach((PointLatLng point) {
-        polylineCoordinates.add(LatLng(point.latitude, point.longitude));
-      });
-    }
-
-    // Defining an ID
-    PolylineId id = PolylineId('poly');
-
-    // Initializing Polyline
-    Polyline polyline = Polyline(
-      polylineId: id,
-      color: Colors.red,
-      points: polylineCoordinates,
-      width: 3,
-    );
-
-    // Adding the polyline to the map
-    setState(() {
-      polylines[id] = polyline;
-    });
-  }
 
   draw_markers() {
-    String startCoordinatesString = '(22.3, 34.5)';
-    String destinationCoordinatesString = '(22.7, 34.4)';
-
-    // double startLat = 42.7477863;
-    // double startLon = -71.1699932;
-    // double destLat = 42.6871386;
-    // double destLon = -71.2143403;
-
     double startLat = _currentPosition.latitude;
     double startLon = _currentPosition.longitude;
     double destLat = startLat + 0.03;
@@ -95,9 +41,6 @@ class _MapViewState extends State<MapView> {
     Marker startMarker = Marker(
       markerId: MarkerId("sfdgh"),
       position: LatLng(startLat, startLon),
-      // infoWindow: InfoWindow(
-      //   title: 'Start $startCoordinatesString',
-      // ),
       icon: BitmapDescriptor.defaultMarker,
     );
 
@@ -129,7 +72,9 @@ class _MapViewState extends State<MapView> {
       ),
     );
 
-    _createPolylines(startLat, startLon, destLat, destLon);
+    Provider.of<PolylinesProvider>(
+      context,listen: false,
+    ).createPolylines(startLat, startLon, destLat, destLon);
   }
 
   _getCurrentLocation() async {
@@ -137,8 +82,6 @@ class _MapViewState extends State<MapView> {
       setState(() {
         // Store the position in the variable
         _currentPosition = position;
-
-        print('CURRENT POS: $_currentPosition');
 
         // For moving the camera to current location
         mapController.animateCamera(
@@ -156,16 +99,46 @@ class _MapViewState extends State<MapView> {
   @override
   void initState() {
     super.initState();
-    CameraPosition _initialLocation = CameraPosition(
-        target: LatLng(widget.initialLocation[0], widget.initialLocation[1]));
   }
 
   @override
   Widget build(BuildContext context) {
+    return MapBody(
+      markers: markers,
+      initMapController: initMapController,
+      initialLocation: _initialLocation,
+      getCurrentLocation: _getCurrentLocation,
+      draw_markers: draw_markers,
+    );
+  }
+
+  void initMapController(controller) {
+    mapController = controller;
+  }
+}
+
+class MapBody extends StatelessWidget {
+  final Set<dynamic> markers;
+  final CameraPosition initialLocation;
+  final Function initMapController;
+  final Function getCurrentLocation;
+  final Function draw_markers;
+
+  MapBody({
+    required this.markers,
+    required this.initialLocation,
+    required this.getCurrentLocation,
+    required this.draw_markers,
+    required this.initMapController,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     // Determining the screen width & height
+    final polylineProvider = Provider.of<PolylinesProvider>(context);
+
     var height = MediaQuery.of(context).size.height;
     var width = MediaQuery.of(context).size.width;
-
     return Container(
       height: height,
       width: width,
@@ -174,16 +147,17 @@ class _MapViewState extends State<MapView> {
           children: <Widget>[
             GoogleMap(
               markers: Set<Marker>.from(markers),
-              polylines: Set<Polyline>.of(polylines.values),
-              initialCameraPosition: _initialLocation,
+              polylines: Set<Polyline>.of(polylineProvider.polylines.values),
+              initialCameraPosition: initialLocation,
               myLocationEnabled: true,
               myLocationButtonEnabled: false,
               mapType: MapType.normal,
               zoomGesturesEnabled: true,
               zoomControlsEnabled: false,
               onMapCreated: (GoogleMapController controller) {
-                mapController = controller;
-                _getCurrentLocation();
+                // mapController = controller;
+                initMapController(controller);
+                getCurrentLocation();
               },
             ),
             Align(
@@ -201,7 +175,7 @@ class _MapViewState extends State<MapView> {
                         child: Icon(Icons.my_location),
                       ),
                       onTap: () {
-                        _getCurrentLocation();
+                        getCurrentLocation();
                       },
                     ),
                   ),
