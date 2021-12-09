@@ -28,14 +28,13 @@ class PolylinesProvider with ChangeNotifier {
     );
 
     if (result.points.isNotEmpty) {
-      result.points.forEach((PointLatLng point) {
+      for (PointLatLng point in result.points) {
         polylineCoordinates.add(
           LatLng(point.latitude, point.longitude),
         );
-      });
+      }
     }
 
-    // Defining an ID
     PolylineId id = PolylineId('poly');
 
     // Initializing Polyline
@@ -48,7 +47,6 @@ class PolylinesProvider with ChangeNotifier {
 
     _polylines[id] = polyline;
     notifyListeners();
-
   }
 
   Map<PolylineId, Polyline> get polylines => _polylines;
