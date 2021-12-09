@@ -33,14 +33,6 @@ class _MapViewState extends State<MapView> {
   Set markers = {};
 
   draw_markers() {
-    String startCoordinatesString = '(22.3, 34.5)';
-    String destinationCoordinatesString = '(22.7, 34.4)';
-
-    // double startLat = 42.7477863;
-    // double startLon = -71.1699932;
-    // double destLat = 42.6871386;
-    // double destLon = -71.2143403;
-
     double startLat = _currentPosition.latitude;
     double startLon = _currentPosition.longitude;
     double destLat = startLat + 0.03;
@@ -49,9 +41,6 @@ class _MapViewState extends State<MapView> {
     Marker startMarker = Marker(
       markerId: MarkerId("sfdgh"),
       position: LatLng(startLat, startLon),
-      // infoWindow: InfoWindow(
-      //   title: 'Start $startCoordinatesString',
-      // ),
       icon: BitmapDescriptor.defaultMarker,
     );
 

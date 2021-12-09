@@ -15,7 +15,6 @@ class PolylinesProvider with ChangeNotifier {
     double destinationLatitude,
     double destinationLongitude,
   ) async {
-    // Initializing PolylinePoints
     polylinePoints = PolylinePoints();
 
     // Generating the list of coordinates to be used for
@@ -28,7 +27,6 @@ class PolylinesProvider with ChangeNotifier {
       travelMode: TravelMode.driving,
     );
 
-    // Adding the coordinates to the list
     if (result.points.isNotEmpty) {
       result.points.forEach((PointLatLng point) {
         polylineCoordinates.add(
@@ -50,10 +48,7 @@ class PolylinesProvider with ChangeNotifier {
 
     _polylines[id] = polyline;
     notifyListeners();
-    //   // Adding the polyline to the map
-    //  setState(() {
-    //     polylines[id] = polyline;
-    //   });
+
   }
 
   Map<PolylineId, Polyline> get polylines => _polylines;
