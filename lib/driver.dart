@@ -4,7 +4,7 @@ import 'package:web_socket_channel/io.dart';
 class Driver {
   final String id;
   final _channel = IOWebSocketChannel.connect(
-    Uri.parse('ws://192.168.43.155:8765'),
+    Uri.parse('wss://trackingsocketserver.herokuapp.com'),
   );
   Driver({
     required this.id,
