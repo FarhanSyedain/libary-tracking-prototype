@@ -88,14 +88,14 @@ class _MapViewState extends State<MapView> {
         _currentPosition = position;
 
         // For moving the camera to current location
-        mapController.animateCamera(
-          CameraUpdate.newCameraPosition(
-            CameraPosition(
-              target: LatLng(position.latitude, position.longitude),
-              zoom: 16.0,
-            ),
-          ),
-        );
+        // mapController.animateCamera(
+        //   CameraUpdate.newCameraPosition(
+        //     CameraPosition(
+        //       target: LatLng(position.latitude, position.longitude),
+        //       zoom: 16.0,
+        //     ),
+        //   ),
+        // );
       });
     });
   }
