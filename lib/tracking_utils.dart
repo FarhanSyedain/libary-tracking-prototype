@@ -4,8 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:provider/provider.dart';
+import 'package:tracking_utils/provider/markers.dart';
 import 'package:tracking_utils/provider/polylines.dart';
 import 'package:tracking_utils/driver.dart';
+import 'package:tracking_utils/services/consumer.dart';
 
 class MapView extends StatefulWidget {
   final String API_KEY;
@@ -33,38 +35,34 @@ class _MapViewState extends State<MapView> {
 
   late GoogleMapController mapController;
   late Position _currentPosition;
-  Set markers = {};
 
-  draw_markers() {
-    double startLat = _currentPosition.latitude;
-    double startLon = _currentPosition.longitude;
-    double destLat = startLat + 0.03;
-    double destLon = startLon + 0.09;
+  void sendConstLocation() async {
+    
+  }
 
-    Marker startMarker = Marker(
-      markerId: MarkerId("sfdgh"),
-      position: LatLng(startLat, startLon),
-      icon: BitmapDescriptor.defaultMarker,
+  _getCurrentLocation() async {
+    await Geolocator.getCurrentPosition().then(
+      (Position position) async {
+        setState(
+          () {
+            // Store the position in the variable
+            // For moving the camera to current location
+            _currentPosition = position;
+            mapController.animateCamera(
+              CameraUpdate.newCameraPosition(
+                CameraPosition(
+                  target: LatLng(position.latitude, position.longitude),
+                  zoom: 16.0,
+                ),
+              ),
+            );
+          },
+        );
+      },
     );
+  }
 
-    Marker endMarker = Marker(
-      markerId: MarkerId("sfgh"),
-      position: LatLng(destLat, destLon),
-      // infoWindow: InfoWindow(
-      //   title: 'Start $startCoordinatesString',
-      // ),
-      icon: BitmapDescriptor.defaultMarker,
-    );
-    setState(() {
-      markers.add(startMarker);
-      markers.add(endMarker);
-    });
-
-    double miny = (startLat <= destLat) ? startLat : destLat;
-    double minx = (startLon <= destLon) ? startLon : destLon;
-    double maxy = (startLat <= destLat) ? destLat : startLat;
-    double maxx = (startLon <= destLon) ? destLon : startLon;
-
+  void _animateCamera(maxy, maxx, miny, minx) {
     mapController.animateCamera(
       CameraUpdate.newLatLngBounds(
         LatLngBounds(
@@ -74,34 +72,12 @@ class _MapViewState extends State<MapView> {
         100.0,
       ),
     );
-
-    Provider.of<PolylinesProvider>(
-      context,
-      listen: false,
-    ).createPolylines(startLat, startLon, destLat, destLon);
-  }
-
-  _getCurrentLocation() async {
-    await Geolocator.getCurrentPosition().then((Position position) async {
-      setState(() {
-        // Store the position in the variable
-        _currentPosition = position;
-
-        // For moving the camera to current location
-        mapController.animateCamera(
-          CameraUpdate.newCameraPosition(
-            CameraPosition(
-              target: LatLng(position.latitude, position.longitude),
-              zoom: 16.0,
-            ),
-          ),
-        );
-      });
-    });
   }
 
   @override
   void initState() {
+    sendConstLocation();
+    print('GHafdas');
     super.initState();
     // driver.connect();
   }
@@ -111,11 +87,10 @@ class _MapViewState extends State<MapView> {
     return Scaffold(
       body: Column(children: [
         MapBody(
-          markers: markers,
           initMapController: initMapController,
           initialLocation: _initialLocation,
           getCurrentLocation: _getCurrentLocation,
-          draw_markers: draw_markers,
+          animate: _animateCamera,
         ),
         Padding(
           padding: EdgeInsets.all(10),
@@ -151,25 +126,24 @@ class _MapViewState extends State<MapView> {
 }
 
 class MapBody extends StatelessWidget {
-  final Set<dynamic> markers;
   final CameraPosition initialLocation;
   final Function initMapController;
   final Function getCurrentLocation;
-  final Function draw_markers;
+  final Function animate;
 
   MapBody({
-    required this.markers,
     required this.initialLocation,
     required this.getCurrentLocation,
-    required this.draw_markers,
     required this.initMapController,
+    required this.animate,
   });
 
   @override
   Widget build(BuildContext context) {
     // Determining the screen width & height
-    final polylineProvider = Provider.of<PolylinesProvider>(context);
 
+    final socketProvider = Provider.of<ConsumerMainConnection>(context);
+    final mapProvider = Provider.of<PolylinesProvider>(context);
     var height = MediaQuery.of(context).size.height / 2;
     var width = MediaQuery.of(context).size.width;
     return Container(
@@ -178,8 +152,8 @@ class MapBody extends StatelessWidget {
       child: Stack(
         children: <Widget>[
           GoogleMap(
-            markers: Set<Marker>.from(markers),
-            polylines: Set<Polyline>.of(polylineProvider.polylines.values),
+            markers: Set<Marker>.from(mapProvider.markers),
+            polylines: Set<Polyline>.of(mapProvider.polylines.values),
             initialCameraPosition: initialLocation,
             myLocationEnabled: true,
             myLocationButtonEnabled: false,
@@ -229,7 +203,23 @@ class MapBody extends StatelessWidget {
                       child: Icon(Icons.add_box_rounded),
                     ),
                     onTap: () {
-                      draw_markers();
+                      List minVals =
+                          context.read<PolylinesProvider>().draw_markers(
+                                33.6596,
+                                118.8597,
+                                34.6596,
+                                117.8597,
+                                innitial: true,
+                              );
+
+                      var minx = minVals[0];
+                      var miny = minVals[1];
+                      var maxx = minVals[2];
+                      var maxy = minVals[3];
+
+                      animate(maxy, maxx, miny, minx);
+
+                      // draw_markers();
                     },
                   ),
                 ),
