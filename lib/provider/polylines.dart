@@ -3,29 +3,37 @@ import 'package:flutter/material.dart';
 import 'package:flutter_polyline_points/flutter_polyline_points.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:tracking_utils/services/consumer.dart';
 
 class PolylinesProvider with ChangeNotifier {
   final Map<PolylineId, Polyline> _polylines = {};
   final String apiKey;
-
+  late final ConsumerMainConnection _socketConnection;
   late Position destination;
-
-  PolylinesProvider(
-    this.apiKey,
-  );
-
   late PolylinePoints polylinePoints;
   late Marker startMarker;
   late Marker endMarker;
   Set markers = {};
   List<LatLng> polylineCoordinates = [];
 
+  PolylinesProvider(this.apiKey) {
+    _socketConnection = ConsumerMainConnection();
+    _socketConnection.initConnection();
+    _socketConnection.getDriverLocation().listen(_socketEventHandler);
+  }
+
+  void _socketEventHandler(event) {
+    //Listen to events here
+    //
+    //
+
+    //
+  }
+
   void initDestination(position) {
     destination = position;
     notifyListeners();
   }
-
-  
 
   createPolylines(
     double startLatitude,
@@ -33,7 +41,6 @@ class PolylinesProvider with ChangeNotifier {
     double destinationLatitude,
     double destinationLongitude,
   ) async {
-    print('1');
     polylinePoints = PolylinePoints();
 
     // Generating the list of coordinates to be used for
@@ -44,7 +51,6 @@ class PolylinesProvider with ChangeNotifier {
       PointLatLng(destinationLatitude, destinationLongitude),
       travelMode: TravelMode.driving,
     );
-    print(2);
 
     if (result.points.isNotEmpty) {
       for (PointLatLng point in result.points) {
@@ -66,12 +72,6 @@ class PolylinesProvider with ChangeNotifier {
       points: polylineCoordinates,
       width: 3,
     );
-
-    print('Polyline created');
-    print('Polyline created');
-    print('Polyline created');
-    print('Polyline created');
-
     _polylines[id] = polyline;
     notifyListeners();
   }
@@ -113,16 +113,6 @@ class PolylinesProvider with ChangeNotifier {
     double minx = (startLon <= destLon) ? startLon : destLon;
     double maxy = (startLat <= destLat) ? destLat : startLat;
     double maxx = (startLon <= destLon) ? destLon : startLon;
-
-    // mapController.animateCamera(
-    //   CameraUpdate.newLatLngBounds(
-    //     LatLngBounds(
-    //       northeast: LatLng(maxy, maxx),
-    //       southwest: LatLng(miny, minx),
-    //     ),
-    //     100.0,
-    //   ),
-    // );
 
     if (innitial) {
       createPolylines(startLat, startLon, destLat, destLon);

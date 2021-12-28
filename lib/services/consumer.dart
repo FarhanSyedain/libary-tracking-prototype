@@ -27,7 +27,7 @@ class ConsumerMainConnection{
   // final Uri _url = Uri.parse('wss://trackingsocketserver.herokuapp.com');
   final Uri _url = Uri.parse('ws://192.168.209.61:8000');
 
-  void intiConnection() {
+  void initConnection() {
     //Innitilise connection with backend
     IOWebSocketChannel _channel = IOWebSocketChannel.connect(_url);
 

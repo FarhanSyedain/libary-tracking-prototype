@@ -36,9 +36,6 @@ class _MapViewState extends State<MapView> {
   late GoogleMapController mapController;
   late Position _currentPosition;
 
-  void sendConstLocation() async {
-    
-  }
 
   _getCurrentLocation() async {
     await Geolocator.getCurrentPosition().then(
@@ -76,8 +73,6 @@ class _MapViewState extends State<MapView> {
 
   @override
   void initState() {
-    sendConstLocation();
-    print('GHafdas');
     super.initState();
     // driver.connect();
   }
@@ -141,8 +136,6 @@ class MapBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Determining the screen width & height
-
-    final socketProvider = Provider.of<ConsumerMainConnection>(context);
     final mapProvider = Provider.of<PolylinesProvider>(context);
     var height = MediaQuery.of(context).size.height / 2;
     var width = MediaQuery.of(context).size.width;
