@@ -17,22 +17,6 @@ class Driver {
     _channel.sink.add(loc);
   }
 
-  getLocation(context) {
-    return StreamBuilder(
-        stream: _channel.stream,
-        builder: (context, snapshot) {
-          // if (snapshot.hasData) {
-          //   print("Data: ");
-          //   print(snapshot.data);
-
-          //   return Text('${snapshot.data}');
-          // } else {
-          //   print("noData");
-          //   return Text('');
-          // }
-          return Text(snapshot.hasData ? '${snapshot.data}' : '');
-        });
-  }
 
 // Add it in the main code
   void dispose() {
