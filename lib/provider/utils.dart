@@ -1,4 +1,6 @@
 import 'dart:math';
+//?I seriously don't understand any of this.
+//?It is just for adjusting location
 
 double dist(double x1, double y1, double x2, double y2, double x3, double y3) {
   final double px = x2 - x1;
@@ -13,7 +15,7 @@ double dist(double x1, double y1, double x2, double y2, double x3, double y3) {
       : u > 1
           ? 1
           : u;
-
+          
   final x = x1 + u * px;
   final y = y1 + u * py;
 
@@ -26,8 +28,6 @@ double dist(double x1, double y1, double x2, double y2, double x3, double y3) {
 }
 
 List<List<double>> findPolyline(List<double> coord, List polylines) {
-  // distances = [find_distance(coord, polylines[i:i+2]) for i in range(len(polylines)-1)]
-
   double minDist = double.infinity;
   int min_idx = -1;
   for (var i = 0; i < polylines.length - 1; i += 1) {
@@ -52,27 +52,23 @@ double dot(List<double> vec1, List<double> vec2) {
 }
 
 List<double> adjustLocationSingleLine(
-    List<double> driverPos, List<List<double>> currentLine) {
-  // print(driver_pos)
-  // print(current_line)
-
+  List<double> driverPos,
+  List<List<double>> currentLine,
+) {
   List<double> driver_vec = [
     driverPos[0] - currentLine[0][0],
     driverPos[1] - currentLine[0][1]
   ];
-  // driver_vec = driver_pos-current_line[0]
   List<double> lineVec = [
     currentLine[1][0] - currentLine[0][0],
     currentLine[1][1] - currentLine[0][1]
   ];
-  // line_vec = current_line[1]-current_line[0]
-  // print(line_vec)
+
   final absolutevalue = pow(dot(lineVec, lineVec), .5);
   List<double> lineUnitVec = [
     lineVec[0] / absolutevalue,
     lineVec[1] / absolutevalue
   ];
-  // print(line_unit_vec)
   double multiplicand = dot(driver_vec, lineUnitVec);
   List<double> new_driver_loc = [
     (multiplicand * lineUnitVec[0]) + currentLine[0][0],
@@ -82,8 +78,6 @@ List<double> adjustLocationSingleLine(
 }
 
 List<double> adjustLocation(List<double> coords, List<List<double>> polylines) {
-  print(coords);
-  print(polylines);
   List<List<double>> currentLine = findPolyline(coords, polylines);
   List<double> adjustedLocation = adjustLocationSingleLine(coords, currentLine);
   return adjustedLocation;

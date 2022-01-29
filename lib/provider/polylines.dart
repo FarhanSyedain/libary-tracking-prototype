@@ -1,39 +1,45 @@
-import 'dart:convert';
-
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_polyline_points/flutter_polyline_points.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:tracking_utils/provider/utils.dart';
 import 'package:tracking_utils/services/consumer.dart';
-import 'package:http/http.dart' as http;
 
 class PolylinesProvider with ChangeNotifier {
+  PolylinesProvider(this.apiKey, this.token) {
+    //Class used to comunicate with backend
+    _socketConnection = ConsumerMainConnection();
+    //Inniaite sockets with backend
+    _socketConnection.initConnection(token);
+    //Listen to drivers location -- Since, map will only be rendered when driver is assigned.
+    _socketConnection.getDriverLocation().listen(_socketEventHandler);
+  }
+
+  //This will be used by google maps to draw polylines.
   final Map<PolylineId, Polyline> _polylines = {};
+  //Google maps api key
   final String apiKey;
+  //Backend class;
   late final ConsumerMainConnection _socketConnection;
+  //Access token of signed in user
   final String token;
+  //The place where product (children or risiti) is to be delivered
   late Position destination;
+  //Class for fetching polylines
   late PolylinePoints polylinePoints;
+  // The marker for [destination]
   late Marker startMarker;
+  //The marker for [driver]
   late Marker endMarker;
+  //will be used in build functin for animating map
   List? animate = [];
+  //Marker points to be drawn. Add marker here instead of map when polyline  has not been fetched.
   List<List> afterPolyLinePoints = [];
   Set<Marker> markers = {};
   List<LatLng> polylineCoordinates = [];
 
-  PolylinesProvider(this.apiKey, this.token) {
-    _socketConnection = ConsumerMainConnection();
-    _socketConnection.initConnection(token);
-    _socketConnection.getDriverLocation().listen(_socketEventHandler);
-  }
-
   void _socketEventHandler(LatLng? event) {
-    print(event);
     draw_markers_parent(33.6971, 75.2844, event!.latitude, event.longitude);
-    // draw_markers_parent(33.6971, 75.2844, 33.808, 75.085);
   }
 
   void initDestination(position) {
@@ -86,32 +92,14 @@ class PolylinesProvider with ChangeNotifier {
         afterPolyLinePoints[0][0],
         afterPolyLinePoints[0][1],
       );
-    } else {
-      print(
-          'fdlkfjasdlkfjdsalkfjadslkfjalkds;fjldsakfjldsakfjasdlk;jfklasdjfklads');
     }
+
     notifyListeners();
-  }
-
-  void draw_innital_markers(restrauntLocation) {
-    // double restrauntLat = restrauntLocation.latitude;
-    // double restruntLong = restrauntLocation.longitude;
-    // double consumerLat = destination.latitude;
-    // double consumerLong = destination.longitude;
-
-    // draw_markers(
-    //   restrauntLat,
-    //   restruntLong,
-    //   consumerLat,
-    //   consumerLong,
-    //   innitial: true,
-    // );
   }
 
   Future<List?> draw_markers_parent(
       startLat, startLon, destLat, destLon) async {
     if (polylineCoordinates.isEmpty) {
-      print('dasfdsafasdfdasfsd');
       afterPolyLinePoints.addAll([
         [destLat, destLon],
         [startLat, startLon]
@@ -119,8 +107,6 @@ class PolylinesProvider with ChangeNotifier {
       createPolylines(startLat, startLon, destLat, destLon);
       return null;
     } else {
-      print('dasfdsafasdffsdfdsafdsdasfsd');
-
       return await draw_markers(startLat, startLon, destLat, destLon);
     }
   }
@@ -147,29 +133,25 @@ class PolylinesProvider with ChangeNotifier {
         markerId: MarkerId("end"),
         position: LatLng(correctedLocation[0], correctedLocation[1]),
         icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen));
-    animate = [];
+
     animate?.clear();
-    animate?.add(startMarker);
-    animate?.add(endMarker);
+    animate?.addAll([startMarker, endMarker]);
+
     markers.clear();
-    markers.add(startMarker);
-    markers.add(actualMarker);
-    markers.add(endMarker);
+    markers.addAll([startMarker, actualMarker, endMarker]);
 
     notifyListeners();
+
+    if (polylineCoordinates.isEmpty) {
+      createPolylines(startLat, startLon, destLat, destLon);
+    } else {
+      modifyPolyline();
+    }
 
     double miny = (startLat <= destLat) ? startLat : destLat;
     double minx = (startLon <= destLon) ? startLon : destLon;
     double maxy = (startLat <= destLat) ? destLat : startLat;
     double maxx = (startLon <= destLon) ? destLon : startLon;
-
-    if (polylineCoordinates.isEmpty) {
-      createPolylines(startLat, startLon, destLat, destLon);
-    } else {
-      // createPolylines(startLat, startLon, destLat, destLon);
-
-      modifyPolyline();
-    }
 
     return [minx, miny, maxx, maxy];
   }
@@ -177,12 +159,6 @@ class PolylinesProvider with ChangeNotifier {
   void modifyPolyline() {
     //Change polyline thingy
   }
-
-  // sendDFDASFASDFSD(data) {
-  //   final dfjlkdasjflkadsj = jsonEncode(data);
-
-  //   Clipboard.setData(ClipboardData(text: dfjlkdasjflkadsj));
-  // }
 
   Map<PolylineId, Polyline> get polylines => _polylines;
 }
