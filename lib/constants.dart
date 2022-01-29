@@ -1,1 +1,1 @@
-const backendURL = ''; //Set as herouku ki url
+const backendURL = 'trackingsocketserver.herokuapp.com'; 
