@@ -6,7 +6,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:web_socket_channel/io.dart';
 
-class ConsumerMainConnection{
+class ConsumerMainConnection {
   //App start . Get order,
   //? When to innitilise connection
   //* When either of the conditions are satisfied ig
@@ -25,33 +25,23 @@ class ConsumerMainConnection{
   late LatLng _currentDriverPosition;
   final StreamController<LatLng?> _streamController = StreamController();
   // final Uri _url = Uri.parse('wss://trackingsocketserver.herokuapp.com');
-  final Uri _url = Uri.parse('ws://192.168.209.61:8000');
+  final Uri _url = Uri.parse('ws://192.168.208.61:8000/ws/customer/');
 
-  void initConnection() {
+  void initConnection(token) async {
     //Innitilise connection with backend
-    IOWebSocketChannel _channel = IOWebSocketChannel.connect(_url);
+    IOWebSocketChannel _channel = IOWebSocketChannel.connect(
+      _url,
+      headers: {
+        'WS-AUTHORIZATION': 'Bearer $token',
+      },
+    );
 
     //? Send basic info to backend so that it can indentify us
     //Todo : Replace id with token. Implement authentication later
-    _channel.sink.add(
-      '{"id": "murtaza", "name": "Murtaza Nazir", "designation": "customer", "opp_id": "garbage"}',
-    );
-
-    // Listen to differnt events
     _channel.stream.listen(
       (event) {
         final eventDeoced = jsonDecode(event);
-        final status = eventDeoced['orderStatus'];
-
-        if (status == 'PENDING') {
-          onPendingStatus(eventDeoced);
-        } else if (status == 'ASSIGNED') {
-          onDriverAssigned(eventDeoced);
-        } else if (status == 'DELIVERED') {
-          onOrderComplete(eventDeoced);
-        } else if (status == 'DELIVERING') {
-          onNewLocation(eventDeoced);
-        }
+        onNewLocation(eventDeoced);
       },
     );
   }
@@ -75,8 +65,8 @@ class ConsumerMainConnection{
   }
 
   void onNewLocation(decodedData) {
-    final latitude = double.parse(decodedData['latitude']);
-    final longitude = double.parse(decodedData['longitude']);
+    final latitude = double.parse(decodedData['lat'].toString());
+    final longitude = double.parse(decodedData['lon'].toString());
 
     _currentDriverPosition = LatLng(latitude, longitude);
     _streamController.add(_currentDriverPosition);

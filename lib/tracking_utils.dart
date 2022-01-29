@@ -36,7 +36,6 @@ class _MapViewState extends State<MapView> {
   late GoogleMapController mapController;
   late Position _currentPosition;
 
-
   _getCurrentLocation() async {
     await Geolocator.getCurrentPosition().then(
       (Position position) async {
@@ -87,32 +86,8 @@ class _MapViewState extends State<MapView> {
           getCurrentLocation: _getCurrentLocation,
           animate: _animateCamera,
         ),
-        Padding(
-          padding: EdgeInsets.all(10),
-          child: Form(
-            child: TextFormField(
-              controller: _controller,
-              decoration:
-                  const InputDecoration(labelText: 'Echo Websocket test'),
-            ),
-          ),
-        ),
-        Container(
-          child: test_socket(driver, context),
-        )
       ]),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _sendMessage,
-        tooltip: 'Send message',
-        child: const Icon(Icons.send),
-      ),
     );
-  }
-
-  void _sendMessage() {
-    if (_controller.text.isNotEmpty) {
-      driver.sendLocation(_controller.text);
-    }
   }
 
   void initMapController(controller) {
@@ -137,8 +112,30 @@ class MapBody extends StatelessWidget {
   Widget build(BuildContext context) {
     // Determining the screen width & height
     final mapProvider = Provider.of<PolylinesProvider>(context);
-    var height = MediaQuery.of(context).size.height / 2;
+    var height = MediaQuery.of(context).size.height - 100;
     var width = MediaQuery.of(context).size.width;
+    if (mapProvider.polylineCoordinates.isNotEmpty) {
+      try {
+      var startLat = mapProvider.animate![0].position.latitude;
+      var startLon = mapProvider.animate![0].position.longitude;
+      var destLat = mapProvider.animate![1].position.latitude;
+      var destLon = mapProvider.animate![1].position.longitude;
+
+          double miny = (startLat <= destLat) ? startLat : destLat;
+    double minx = (startLon <= destLon) ? startLon : destLon;
+    double maxy = (startLat <= destLat) ? destLat : startLat;
+    double maxx = (startLon <= destLon) ? destLon : startLon;
+
+      // double miny = (_minx <= _maxx) ? _minx : maxx;
+      // double minx = (_miny <= _maxy) ? _minx : _maxx;
+      // double maxy = (_minx <= _maxx) ? _maxx : _minx;
+      // double maxx = (_miny <= _maxx) ? _maxy : _miny;
+
+      animate(maxy, maxx, miny, minx); } 
+      catch(e) {
+        print(e);
+      }
+    }
     return Container(
       height: height,
       width: width,
@@ -195,14 +192,14 @@ class MapBody extends StatelessWidget {
                       height: 56,
                       child: Icon(Icons.add_box_rounded),
                     ),
-                    onTap: () {
+                    onTap: () async {
                       List minVals =
-                          context.read<PolylinesProvider>().draw_markers(
+                          await context.read<PolylinesProvider>().draw_markers(
                                 33.6596,
                                 118.8597,
                                 34.6596,
                                 117.8597,
-                                innitial: true,
+                                // innitial: true,
                               );
 
                       var minx = minVals[0];
@@ -223,8 +220,4 @@ class MapBody extends StatelessWidget {
       ),
     );
   }
-}
-
-Widget test_socket(Driver driver, BuildContext context) {
-  return driver.getLocation(context);
 }
