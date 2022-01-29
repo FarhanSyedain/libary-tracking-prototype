@@ -4,9 +4,10 @@ import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:tracking_utils/provider/utils.dart';
 import 'package:tracking_utils/services/consumer.dart';
+import 'package:tracking_utils/utils/utils.dart';
 
 class PolylinesProvider with ChangeNotifier {
-  PolylinesProvider(this.apiKey, this.token) {
+  PolylinesProvider(this.apiKey, this.token,this.context) {
     //Class used to comunicate with backend
     _socketConnection = ConsumerMainConnection();
     //Inniaite sockets with backend
@@ -37,6 +38,9 @@ class PolylinesProvider with ChangeNotifier {
   List<List> afterPolyLinePoints = [];
   Set<Marker> markers = {};
   List<LatLng> polylineCoordinates = [];
+   final BuildContext context;
+  late BitmapDescriptor customIcon ;
+
 
   void _socketEventHandler(LatLng? event) {
     draw_markers_parent(33.6971, 75.2844, event!.latitude, event.longitude);
@@ -126,13 +130,20 @@ class PolylinesProvider with ChangeNotifier {
       icon: BitmapDescriptor.defaultMarker,
     );
     Marker actualMarker = Marker(
-        markerId: MarkerId("actual"),
-        position: LatLng(destLat, destLon),
-        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure));
+      markerId: MarkerId("actual"),
+      position: LatLng(destLat, destLon),
+      icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
+    );
+    ImageConfiguration configuration = createLocalImageConfiguration(context);
+    final customIcon = await BitmapDescriptor.fromAssetImage(
+        configuration, 'assets/schoolBus.png');
+
     Marker endMarker = Marker(
-        markerId: MarkerId("end"),
-        position: LatLng(correctedLocation[0], correctedLocation[1]),
-        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen));
+      markerId: MarkerId("end"),
+      position: LatLng(correctedLocation[0], correctedLocation[1]),
+      // icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
+      icon: customIcon,
+    );
 
     animate?.clear();
     animate?.addAll([startMarker, endMarker]);
