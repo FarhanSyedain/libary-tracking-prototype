@@ -29,8 +29,7 @@ dev_dependencies:
 # The following section is specific to Flutter.
 flutter:
 
-  assets:
-    - assets/
+
   
   # For details regarding assets in packages, see
   # https://flutter.dev/assets-and-images/#from-packages

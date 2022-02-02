@@ -8,7 +8,7 @@ class ConsumerMainConnection {
   late IOWebSocketChannel _channel;
   late IOWebSocketChannel _tempDriverChannel;
   late LatLng _currentDriverPosition;
-  final StreamController<LatLng?> _streamController = StreamController();
+  final StreamController _streamController = StreamController();
   final Uri _url = Uri.parse('ws://$backendURL/ws/customer/');
 
   void initConnection(token) async {
@@ -31,12 +31,19 @@ class ConsumerMainConnection {
   void onNewLocation(decodedData) {
     final latitude = double.parse(decodedData['lat'].toString());
     final longitude = double.parse(decodedData['lon'].toString());
+    double endlatitude;
+    double endlongitude;
+    LatLng? _endLoc;
+
+    endlatitude = double.parse(decodedData['endlat'].toString());
+    endlongitude = double.parse(decodedData['endlon'].toString());
+    _endLoc = LatLng(endlatitude, endlongitude);
 
     _currentDriverPosition = LatLng(latitude, longitude);
-    _streamController.add(_currentDriverPosition);
+    _streamController.add([_currentDriverPosition, _endLoc]);
   }
 
-  Stream<LatLng?> getDriverLocation() {
+  Stream getDriverLocation() {
     final stream = _streamController.stream;
     return stream;
   }
