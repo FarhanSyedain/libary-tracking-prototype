@@ -1,19 +1,25 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_polyline_points/flutter_polyline_points.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:tracking_utils/provider/utils.dart';
 import 'package:tracking_utils/services/consumer.dart';
-import 'package:tracking_utils/utils/utils.dart';
+import 'dart:ui' as ui;
+import 'package:location/location.dart';
 
 class PolylinesProvider with ChangeNotifier {
-  PolylinesProvider(this.apiKey, this.token,this.context) {
+  PolylinesProvider(this.apiKey, this.token, this.context) {
     //Class used to comunicate with backend
     _socketConnection = ConsumerMainConnection();
     //Inniaite sockets with backend
     _socketConnection.initConnection(token);
     //Listen to drivers location -- Since, map will only be rendered when driver is assigned.
     _socketConnection.getDriverLocation().listen(_socketEventHandler);
+
+    setMarker();
   }
 
   //This will be used by google maps to draw polylines.
@@ -38,17 +44,81 @@ class PolylinesProvider with ChangeNotifier {
   List<List> afterPolyLinePoints = [];
   Set<Marker> markers = {};
   List<LatLng> polylineCoordinates = [];
-   final BuildContext context;
-  late BitmapDescriptor customIcon ;
+  final BuildContext context;
+  late BitmapDescriptor? customIcon;
 
+  Future<void> setMarker() async {
+    getBytesFromAsset('assets/schoolBus.png', 64).then((onValue) {
+      customIcon = BitmapDescriptor.fromBytes(onValue);
+    });
+  }
 
-  void _socketEventHandler(LatLng? event) {
-    draw_markers_parent(33.6971, 75.2844, event!.latitude, event.longitude);
+  void _socketEventHandler(event) {
+    final LatLng point = event[0];
+    final LatLng destination = event[1];
+    draw_markers_parent(
+      point.latitude,
+      point.longitude,
+      destination.latitude,
+      destination.longitude,
+    );
   }
 
   void initDestination(position) {
     destination = position;
     notifyListeners();
+  }
+
+  static Future<bool> handlePermission() async {
+    final GeolocatorPlatform _geolocatorPlatform = GeolocatorPlatform.instance;
+    bool serviceEnabled;
+
+    LocationPermission permission;
+    Location location =  Location();
+
+    bool _serviceEnabled;
+    PermissionStatus _permissionGranted;
+
+    // Test if location services are enabled.
+    serviceEnabled = await _geolocatorPlatform.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      // Location services are not enabled don't continue
+      // accessing the position and request users of the
+      // App to enable the location services.
+
+      _serviceEnabled = await location.serviceEnabled();
+      if (!_serviceEnabled) {
+        _serviceEnabled = await location.requestService();
+        if (!_serviceEnabled) {
+          return false;
+        }
+      }
+    }
+
+    permission = await _geolocatorPlatform.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await _geolocatorPlatform.requestPermission();
+      if (permission == LocationPermission.denied) {
+        // Permissions are denied, next time you could try
+        // requesting permissions again (this is also where
+        // Android's shouldShowRequestPermissionRationale
+        // returned true. According to Android guidelines
+        // your App should show an explanatory UI now.
+
+        return false;
+      }
+    }
+
+    if (permission == LocationPermission.deniedForever) {
+      // Permissions are denied forever, handle appropriately.
+
+      return false;
+    }
+
+    // When we reach here, permissions are granted and we can
+    // continue accessing the position of the device.
+
+    return true;
   }
 
   createPolylines(
@@ -58,14 +128,13 @@ class PolylinesProvider with ChangeNotifier {
     double destinationLongitude,
   ) async {
     polylinePoints = PolylinePoints();
-
     // Generating the list of coordinates to be used for
     // drawing the polylines
     PolylineResult result = await polylinePoints.getRouteBetweenCoordinates(
       apiKey, // Google Maps API Key
       PointLatLng(startLatitude, startLongitude),
       // PointLatLng(destinationLatitude, destinationLongitude),
-      PointLatLng(33.808, 75.085),
+      PointLatLng(destinationLatitude, destinationLongitude),
       travelMode: TravelMode.driving,
     );
     polylineCoordinates.clear();
@@ -77,7 +146,6 @@ class PolylinesProvider with ChangeNotifier {
         );
       }
     }
-
     PolylineId id = PolylineId('poly');
 
     // Initializing Polyline
@@ -89,6 +157,8 @@ class PolylinesProvider with ChangeNotifier {
     );
     _polylines.clear();
     _polylines[id] = polyline;
+    notifyListeners();
+
     if (afterPolyLinePoints.isNotEmpty) {
       draw_markers(
         afterPolyLinePoints[1][0],
@@ -97,8 +167,6 @@ class PolylinesProvider with ChangeNotifier {
         afterPolyLinePoints[0][1],
       );
     }
-
-    notifyListeners();
   }
 
   Future<List?> draw_markers_parent(
@@ -118,7 +186,7 @@ class PolylinesProvider with ChangeNotifier {
   Future<List> draw_markers(startLat, startLon, destLat, destLon,
       {innitial = true}) async {
     final correctedLocation = adjustLocation(
-      [destLat, destLon],
+      [startLat, startLon],
       polylineCoordinates.map((e) {
         return [e.latitude, e.longitude];
       }).toList(),
@@ -126,23 +194,20 @@ class PolylinesProvider with ChangeNotifier {
 
     Marker startMarker = Marker(
       markerId: MarkerId("start"),
-      position: LatLng(startLat, startLon),
+      position: LatLng(destLat, destLon),
       icon: BitmapDescriptor.defaultMarker,
     );
     Marker actualMarker = Marker(
       markerId: MarkerId("actual"),
-      position: LatLng(destLat, destLon),
+      position: LatLng(startLat, startLon),
       icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
     );
-    ImageConfiguration configuration = createLocalImageConfiguration(context);
-    final customIcon = await BitmapDescriptor.fromAssetImage(
-        configuration, 'assets/schoolBus.png');
 
     Marker endMarker = Marker(
       markerId: MarkerId("end"),
       position: LatLng(correctedLocation[0], correctedLocation[1]),
       // icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
-      icon: customIcon,
+      icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
     );
 
     animate?.clear();
@@ -169,6 +234,16 @@ class PolylinesProvider with ChangeNotifier {
 
   void modifyPolyline() {
     //Change polyline thingy
+  }
+
+  static Future<Uint8List> getBytesFromAsset(String path, int width) async {
+    ByteData data = await rootBundle.load(path);
+    ui.Codec codec = await ui.instantiateImageCodec(data.buffer.asUint8List(),
+        targetWidth: width);
+    ui.FrameInfo fi = await codec.getNextFrame();
+    return (await fi.image.toByteData(format: ui.ImageByteFormat.png))!
+        .buffer
+        .asUint8List();
   }
 
   Map<PolylineId, Polyline> get polylines => _polylines;

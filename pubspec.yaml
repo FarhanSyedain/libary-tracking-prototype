@@ -16,6 +16,7 @@ dependencies:
   provider: ^6.0.1
   web_socket_channel:
   flutter_svg: ^1.0.3
+  location: ^4.3.0
 
 
 dev_dependencies:
@@ -29,8 +30,7 @@ dev_dependencies:
 # The following section is specific to Flutter.
 flutter:
 
-  assets:
-    - assets/
+
   
   # For details regarding assets in packages, see
   # https://flutter.dev/assets-and-images/#from-packages
