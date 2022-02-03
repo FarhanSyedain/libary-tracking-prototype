@@ -3,6 +3,7 @@ library tracking_utils;
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:tracking_utils/provider/polylines.dart';
 import 'mapViewBody.dart';
 
 class MapView extends StatefulWidget {
@@ -32,6 +33,8 @@ class _MapViewState extends State<MapView> {
   late Position _currentPosition;
 
   _getCurrentLocation() async {
+    final hasPermition = await PolylinesProvider.handlePermission();
+    print(hasPermition);
     await Geolocator.getCurrentPosition().then(
       (Position position) async {
         setState(
