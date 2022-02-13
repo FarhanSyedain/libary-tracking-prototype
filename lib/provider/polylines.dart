@@ -185,12 +185,18 @@ class PolylinesProvider with ChangeNotifier {
 
   Future<List> draw_markers(startLat, startLon, destLat, destLon,
       {innitial = true}) async {
+    print('startLat $startLat');
+    print('startLon $startLon');
+    print('destLat $destLat');
+    print('destLon $destLon');
+    print('these are the cordinates $polylineCoordinates');
     final correctedLocation = adjustLocation(
       [startLat, startLon],
       polylineCoordinates.map((e) {
         return [e.latitude, e.longitude];
       }).toList(),
     );
+
 
     Marker startMarker = Marker(
       markerId: MarkerId("start"),

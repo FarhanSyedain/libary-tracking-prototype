@@ -35,8 +35,10 @@ class ConsumerMainConnection {
     double endlongitude;
     LatLng? _endLoc;
 
-    endlatitude = double.parse(decodedData['endlat'].toString());
-    endlongitude = double.parse(decodedData['endlon'].toString());
+    // endlatitude = double.parse(decodedData['endlat'].toString());
+    // endlongitude = double.parse(decodedData['endlon'].toString());
+    endlatitude = 33.702;
+    endlongitude = 75.26;
     _endLoc = LatLng(endlatitude, endlongitude);
 
     _currentDriverPosition = LatLng(latitude, longitude);
