@@ -15,7 +15,7 @@ double dist(double x1, double y1, double x2, double y2, double x3, double y3) {
       : u > 1
           ? 1
           : u;
-          
+
   final x = x1 + u * px;
   final y = y1 + u * py;
 
@@ -27,7 +27,7 @@ double dist(double x1, double y1, double x2, double y2, double x3, double y3) {
   return double.parse(dist.toString());
 }
 
-List<List<double>> findPolyline(List<double> coord, List polylines) {
+int findPolyline(List<double> coord, List polylines) {
   double minDist = double.infinity;
   int min_idx = -1;
   for (var i = 0; i < polylines.length - 1; i += 1) {
@@ -39,7 +39,7 @@ List<List<double>> findPolyline(List<double> coord, List polylines) {
       min_idx = i;
     }
   }
-  return [polylines[min_idx], polylines[min_idx + 1]];
+  return min_idx;
 }
 
 double dot(List<double> vec1, List<double> vec2) {
@@ -77,8 +77,11 @@ List<double> adjustLocationSingleLine(
   return new_driver_loc;
 }
 
-List<double> adjustLocation(List<double> coords, List<List<double>> polylines) {
-  List<List<double>> currentLine = findPolyline(coords, polylines);
+List<dynamic> adjustLocation(
+    List<double> coords, List<List<double>> polylines) {
+  int min_idx = findPolyline(coords, polylines);
+  final currentLine = [polylines[min_idx], polylines[min_idx + 1]];
   List<double> adjustedLocation = adjustLocationSingleLine(coords, currentLine);
-  return adjustedLocation;
+
+  return [min_idx, adjustedLocation];
 }

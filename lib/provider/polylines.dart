@@ -74,7 +74,7 @@ class PolylinesProvider with ChangeNotifier {
     bool serviceEnabled;
 
     LocationPermission permission;
-    Location location =  Location();
+    Location location = Location();
 
     bool _serviceEnabled;
     PermissionStatus _permissionGranted;
@@ -190,13 +190,15 @@ class PolylinesProvider with ChangeNotifier {
     print('destLat $destLat');
     print('destLon $destLon');
     print('these are the cordinates $polylineCoordinates');
-    final correctedLocation = adjustLocation(
+    final result = adjustLocation(
       [startLat, startLon],
       polylineCoordinates.map((e) {
         return [e.latitude, e.longitude];
       }).toList(),
     );
 
+    final correctedLocation = result[1];
+    final min_idx = result[0];
 
     Marker startMarker = Marker(
       markerId: MarkerId("start"),
@@ -227,7 +229,7 @@ class PolylinesProvider with ChangeNotifier {
     if (polylineCoordinates.isEmpty) {
       createPolylines(startLat, startLon, destLat, destLon);
     } else {
-      modifyPolyline();
+      modifyPolyline(min_idx);
     }
 
     double miny = (startLat <= destLat) ? startLat : destLat;
@@ -238,8 +240,21 @@ class PolylinesProvider with ChangeNotifier {
     return [minx, miny, maxx, maxy];
   }
 
-  void modifyPolyline() {
-    //Change polyline thingy
+  void modifyPolyline(int min_idx) {
+    final slicedPolyLine = polylineCoordinates.sublist(min_idx);
+
+    PolylineId id = PolylineId('poly');
+
+    // Initializing Polyline
+    Polyline polyline = Polyline(
+      polylineId: id,
+      color: Colors.red,
+      points: slicedPolyLine,
+      width: 3,
+    );
+    _polylines.clear();
+    _polylines[id] = polyline;
+    notifyListeners();
   }
 
   static Future<Uint8List> getBytesFromAsset(String path, int width) async {
