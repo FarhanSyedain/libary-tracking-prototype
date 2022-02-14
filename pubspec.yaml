@@ -17,6 +17,8 @@ dependencies:
   web_socket_channel:
   flutter_svg: ^1.0.3
   location: ^4.3.0
+  camera: ^0.9.4+11
+  image: ^3.1.1
 
 
 dev_dependencies:
