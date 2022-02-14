@@ -185,11 +185,7 @@ class PolylinesProvider with ChangeNotifier {
 
   Future<List> draw_markers(startLat, startLon, destLat, destLon,
       {innitial = true}) async {
-    print('startLat $startLat');
-    print('startLon $startLon');
-    print('destLat $destLat');
-    print('destLon $destLon');
-    print('these are the cordinates $polylineCoordinates');
+
     final result = adjustLocation(
       [startLat, startLon],
       polylineCoordinates.map((e) {
@@ -205,11 +201,6 @@ class PolylinesProvider with ChangeNotifier {
       position: LatLng(destLat, destLon),
       icon: BitmapDescriptor.defaultMarker,
     );
-    Marker actualMarker = Marker(
-      markerId: MarkerId("actual"),
-      position: LatLng(startLat, startLon),
-      icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
-    );
 
     Marker endMarker = Marker(
       markerId: MarkerId("end"),
@@ -222,7 +213,7 @@ class PolylinesProvider with ChangeNotifier {
     animate?.addAll([startMarker, endMarker]);
 
     markers.clear();
-    markers.addAll([startMarker, actualMarker, endMarker]);
+    markers.addAll([startMarker, endMarker]);
 
     notifyListeners();
 
